@@ -5,6 +5,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, CallbackQuery, InlineQue
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+from datetime import date, time, datetime
 
 import keyboards as kb
 
@@ -34,13 +35,14 @@ async def create_ched(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(DateStates.waiting_date)
-async def time_ched(message: Message, state: FSMContext):
-    date = message.text
+async def date_ched(message: Message, state: FSMContext):
+    date1 = message.text
     try:
-        day, month_l, year = date.split('.')
+        day, month_l, year = date1.split('.')
+        dt = date(int(year), int(month_l), int(day))
         if (len(day) == 2 and len(month_l) == 2 and len(year) == 4 and
                 day.isdigit() and month_l.isdigit() and year.isdigit()):
-            await message.answer(f'Отлично, дата есть {date}, напиши теперь на какое время ты хочешь поставить слот в формате '
+            await message.answer(f'Отлично, дата есть {dt}, напиши теперь на какое время ты хочешь поставить слот в формате '
                                  f'ЧЧ:ММ')
             await state.clear()
             await state.set_state(DateStates.waiting_time)
@@ -52,14 +54,19 @@ async def time_ched(message: Message, state: FSMContext):
 
 @router.message(DateStates.waiting_time)
 async def time_ched(message: Message, state: FSMContext):
-    time = message.text
+    time1 = message.text
     try:
-        hours, minutes = time.split(':')
+        hours, minutes = time1.split(':')
         if 1 <= len(minutes) <= 2 and 1 <= len(hours) <= 2 and minutes.isdigit() and hours.isdigit():
-            await message.answer(f'Отлично, слот на {time} готов.')
+            await message.answer(f'Отлично, слот на {time1} готов.')
             await message.answer('Выбери действие:', reply_markup=kb.completion)
             await state.clear()
         else:
             await message.answer('Введи время в формате: ЧЧ:ММ')
     except ValueError:
         await message.answer('Введи время в формате: ЧЧ:ММ')
+
+
+@router.callback_query(F.data == 'add_schedule')
+async def add_ched(callback: CallbackQuery):
+    await callback.message.answer('Подскажи мне на какую дату ты хочешь дополнить расписание:', )
